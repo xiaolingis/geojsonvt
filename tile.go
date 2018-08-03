@@ -64,7 +64,7 @@ func CreateTile(features []Feature, tileid m.TileID, options Config) Tile {
 }
 
 // makes a tile for a geojson vt implementation
-func (tile Tile) MakeTile() []byte {
+func (tile Tile) Marshal() []byte {
 
 	var indexval int
 	if len(tile.Source) > tile.Options.MaxFeatures {
