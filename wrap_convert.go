@@ -246,3 +246,72 @@ func ConvertFeatures(features []*geojson.Feature, options Config) []Feature {
 	}
 	return newfeatures
 }
+
+func reprojectX(x float64) float64 {
+	return (x - .5) * 360
+}
+
+func reprojectY(y float64) float64 {
+	eh := math.Exp(((y - .5) / -.25 * math.Pi))
+
+	y = math.Asin((1-eh)/(-eh-1)) / math.Pi * 180.0
+
+	return y
+}
+
+// reprojects a point back into long lat
+func Reproject(pt []float64) []float64 {
+	return []float64{reprojectX(pt[0]), reprojectY(pt[1])}
+}
+
+func convertlinetovt(line []float64) [][]float64 {
+	newline := make([][]float64, len(line)/3)
+	increment := 0
+	for i := 0; i < len(line); i += 3 {
+		newline[increment] = Reproject([]float64{line[i], line[i+1]})
+		increment++
+	}
+	return newline
+}
+
+func convertlinestovt(lines [][]float64) [][][]float64 {
+	newlines := make([][][]float64, len(lines))
+	for i := range lines {
+		newlines[i] = convertlinetovt(lines[i])
+	}
+	return newlines
+}
+
+func ConvertGeometry(oldgeometry Geometry) *geojson.Geometry {
+	var geometry *geojson.Geometry
+	switch oldgeometry.Type {
+	case "Point":
+		geometry = &geojson.Geometry{
+			Point: []float64{
+				reprojectX(oldgeometry.Point[0]),
+				reprojectY(oldgeometry.Point[1]),
+			},
+			Type: "Point",
+		}
+	case "MultiPoint":
+		geometry = &geojson.Geometry{Type: "MultiPoint"}
+		geometry.MultiPoint = convertlinetovt(oldgeometry.MultiPoint)
+	case "LineString":
+		geometry = &geojson.Geometry{LineString: convertlinetovt(oldgeometry.LineString), Type: "LineString"}
+	case "MultiLineString":
+		geometry = &geojson.Geometry{MultiLineString: convertlinestovt(oldgeometry.MultiLineString), Type: "MultiLineString"}
+
+	case "Polygon":
+		geometry = &geojson.Geometry{Polygon: convertlinestovt(oldgeometry.Polygon), Type: "Polygon"}
+
+	case "MultiPolygon":
+		multipolygon := make([][][][]float64, len(oldgeometry.MultiPolygon))
+		for pos, polygon := range oldgeometry.MultiPolygon {
+			multipolygon[pos] = convertlinestovt(polygon)
+		}
+
+		geometry = &geojson.Geometry{MultiPolygon: multipolygon, Type: "MultiPolygon"}
+
+	}
+	return geometry
+}
