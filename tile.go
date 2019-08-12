@@ -72,7 +72,6 @@ func (tile Tile) Marshal() []byte {
 	} else {
 		indexval = len(tile.Source)
 	}
-
 	layerwrite := vt.NewLayerConfig(vt.Config{TileID: tile.TileID, Name: tile.Options.LayerName})
 	var tolerance float64
 	if tile.Options.MaxZoom == 0 {
@@ -160,6 +159,7 @@ func (tile Tile) Marshal() []byte {
 			layerwrite.AddFeatureRaw(id, geomtype, layerwrite.Cursor.Geometry, feature.Tags)
 		}
 	}
+	
 	return layerwrite.Flush()
 }
 

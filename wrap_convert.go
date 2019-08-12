@@ -231,8 +231,7 @@ func ConvertFeature(feature *geojson.Feature, options Config) Feature {
 
 	}
 	if options.PropertiesBool {
-		properties := map[string]interface{}{"COLORKEY": feature.Properties["COLORKEY"]}
-		return CreateFeature(feature.ID, geometry, properties)
+		return CreateFeature(feature.ID, geometry, feature.Properties)
 	}
 
 	return CreateFeature(feature.ID, geometry, feature.Properties)
